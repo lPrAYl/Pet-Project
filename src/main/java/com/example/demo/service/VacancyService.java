@@ -71,6 +71,7 @@ public class VacancyService {
 
                         JSONObject jsonObject = new JSONObject(response.body());
                         mapEmployerIdToEmployerUrl.put(entry.getKey(), jsonObject.getString("site_url"));
+                        return 0;
 
                     } catch (IOException | InterruptedException e) {
                         throw new RuntimeException(e);
