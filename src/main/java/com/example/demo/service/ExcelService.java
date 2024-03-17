@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.service.mail.SendEmailsService;
 import jakarta.activation.DataSource;
 import jakarta.mail.util.ByteArrayDataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +20,10 @@ public class ExcelService {
 
     @Value("${prop.mail.send_to}")
     private String sendTo;
-    private final MailService mailService;
+    private final SendEmailsService sendEmailsService;
 
-    public ExcelService(MailService mailService) {
-        this.mailService = mailService;
+    public ExcelService(SendEmailsService sendEmailsService) {
+        this.sendEmailsService = sendEmailsService;
     }
 
     public void generateExcelFile() {
@@ -41,6 +42,6 @@ public class ExcelService {
         }
 
         DataSource attachment = new ByteArrayDataSource(outputStream.toByteArray(), "application/vnd.ms-excel");
-        mailService.sendHtmlMessage(sendTo, "subject", "-----text-----", "file.xlsx", attachment);
+        sendEmailsService.sendHtmlMessage(sendTo, "subject", "-----text-----", "file.xlsx", attachment);
     }
 }

@@ -1,6 +1,7 @@
-package com.example.demo.service;
+package com.example.demo.service.mail;
 
 import jakarta.activation.DataSource;
+
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,11 +10,11 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
+import java.io.*;
 
 @Slf4j
 @Service
-public class MailService {
+public class SendEmailsService {
 
     @Value("${spring.mail.username}")
     private String from;
@@ -21,7 +22,7 @@ public class MailService {
     private String sendTo;
     private final JavaMailSender javaMailSender;
 
-    public MailService(JavaMailSender javaMailSender) {
+    public SendEmailsService(JavaMailSender javaMailSender) {
         this.javaMailSender = javaMailSender;
     }
 
