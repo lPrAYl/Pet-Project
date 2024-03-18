@@ -12,4 +12,7 @@ public class VacancyDto {
     private Long employerId;
     private String employerName;
     private String employerUrl;
+    private Integer salaryFrom;
+    private Integer salaryTo;
+    private String salaryCurrency;
 }
