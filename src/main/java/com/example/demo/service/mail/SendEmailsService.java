@@ -1,7 +1,6 @@
 package com.example.demo.service.mail;
 
 import jakarta.activation.DataSource;
-
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +9,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
 
 @Slf4j
 @Service
@@ -59,5 +58,4 @@ public class SendEmailsService {
             log.error(e.getLocalizedMessage(), e);
         }
     }
-
 }

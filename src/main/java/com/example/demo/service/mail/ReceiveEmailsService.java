@@ -67,7 +67,7 @@ public class ReceiveEmailsService {
 
                             // Сохраняем вложение на диск
                             InputStream inputStream = bodyPart.getInputStream();
-                            OutputStream outputStream = new FileOutputStream(new File(attachmentName));
+                            OutputStream outputStream = new FileOutputStream(attachmentName);
 
                             byte[] buffer = new byte[4096];
                             int bytesRead;
@@ -96,5 +96,4 @@ public class ReceiveEmailsService {
             log.error(e.getLocalizedMessage(), e);
         }
     }
-
 }
