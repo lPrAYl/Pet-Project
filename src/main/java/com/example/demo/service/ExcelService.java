@@ -1,13 +1,16 @@
 package com.example.demo.service;
 
+import ch.qos.logback.classic.Logger;
 import com.example.demo.dto.VacancyDto;
+import com.example.demo.entity.VacancyEntity;
+import com.example.demo.repository.VacancyRepository;
 import com.example.demo.service.mail.SendEmailsService;
 import jakarta.activation.DataSource;
 import jakarta.mail.util.ByteArrayDataSource;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,25 +18,28 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
-@Slf4j
 @Service
 public class ExcelService {
+
+    private final VacancyRepository vacancyRepository;
+    Logger log = (Logger) LoggerFactory.getLogger(ExcelService.class);
 
     @Value("${prop.mail.send_to}")
     private String sendTo;
     private final SendEmailsService sendEmailsService;
 
-    public ExcelService(SendEmailsService sendEmailsService) {
+    public ExcelService(VacancyRepository vacancyRepository, SendEmailsService sendEmailsService) {
+        this.vacancyRepository = vacancyRepository;
         this.sendEmailsService = sendEmailsService;
     }
 
-    public void generateExcelFile(Map<Long, VacancyDto> vacancyDtoMap) {
+    public void generateExcelFile() {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
              XSSFWorkbook workbook = new XSSFWorkbook()
         ) {
             Sheet sheet = workbook.createSheet("new");
             fillExcelHeader(sheet);
-            fillExcelData(vacancyDtoMap, sheet);
+            fillExcelData(sheet);
             workbook.write(outputStream);
             DataSource attachment = new ByteArrayDataSource(outputStream.toByteArray(), "application/vnd.ms-excel");
             //todo нужно вынести отсюда
@@ -53,16 +59,16 @@ public class ExcelService {
         headerRow.createCell(5).setCellValue("Url вакансии");
     }
 
-    private void fillExcelData(Map<Long, VacancyDto> vacancyDtoMap, Sheet sheet) {
+    private void fillExcelData(Sheet sheet) {
         int rowNum = 1;
-        for (VacancyDto vacancyDto : vacancyDtoMap.values()) {
+        for (VacancyEntity vacancy : vacancyRepository.findAllByIsSentIsFalse()) {
             Row row = sheet.createRow(rowNum);
-            row.createCell(0).setCellValue(vacancyDto.getName());
-            row.createCell(1).setCellValue(vacancyDto.getEmployerName());
-            row.createCell(2).setCellValue(vacancyDto.getEmployerUrl());
-            row.createCell(3).setCellValue(getSalaryValue(vacancyDto.getSalaryFrom(), vacancyDto.getSalaryCurrency()));
-            row.createCell(4).setCellValue(getSalaryValue(vacancyDto.getSalaryTo(), vacancyDto.getSalaryCurrency()));
-            row.createCell(5).setCellValue(vacancyDto.getVacancyUrl());
+            row.createCell(0).setCellValue(vacancy.getName());
+            row.createCell(1).setCellValue(vacancy.getEmployerName());
+            row.createCell(2).setCellValue(vacancy.getEmployerUrl());
+            row.createCell(3).setCellValue(getSalaryValue(vacancy.getSalaryFrom(), vacancy.getSalaryCurrency()));
+            row.createCell(4).setCellValue(getSalaryValue(vacancy.getSalaryTo(), vacancy.getSalaryCurrency()));
+            row.createCell(5).setCellValue(vacancy.getVacancyUrl());
             rowNum++;
         }
     }

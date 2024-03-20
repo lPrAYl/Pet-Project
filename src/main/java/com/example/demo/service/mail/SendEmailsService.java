@@ -1,8 +1,9 @@
 package com.example.demo.service.mail;
 
+import ch.qos.logback.classic.Logger;
 import jakarta.activation.DataSource;
 import jakarta.mail.internet.MimeMessage;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,9 +12,10 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 
-@Slf4j
 @Service
 public class SendEmailsService {
+
+    Logger log = (Logger) LoggerFactory.getLogger(SendEmailsService.class);
 
     @Value("${spring.mail.username}")
     private String from;

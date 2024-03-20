@@ -1,21 +1,22 @@
 package com.example.demo.service.mail;
 
+import ch.qos.logback.classic.Logger;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMultipart;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 
-@Slf4j
 @Service
 public class ReceiveEmailsService {
+
+    Logger log = (Logger) LoggerFactory.getLogger(ReceiveEmailsService.class);
 
     @Value("${prop.mail.imap}")
     private String host;

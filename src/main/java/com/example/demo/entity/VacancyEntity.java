@@ -1,12 +1,25 @@
-package com.example.demo.dto;
+package com.example.demo.entity;
 
-public class VacancyDto {
+import jakarta.persistence.*;
+import org.hibernate.annotations.DynamicUpdate;
+
+@Entity(name = "vacancy")
+public class VacancyEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name = "";
+    @Column(unique = true)
+    private Long vacancyId;
+    @Column(name = "vacancy_name")
+    private String name;
     private Long employerId;
-    private String employerName = "";
-    private String employerUrl = "";
-    private Integer salaryFrom = 0;
+    private String employerName;
+    private String employerUrl;
+    private Integer salaryFrom;
+    private Integer salaryTo;
+    private String salaryCurrency;
+    private String vacancyUrl;
+    private Boolean isSent = false;
 
     public Long getId() {
         return id;
@@ -14,6 +27,14 @@ public class VacancyDto {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getVacancyId() {
+        return vacancyId;
+    }
+
+    public void setVacancyId(Long vacancyId) {
+        this.vacancyId = vacancyId;
     }
 
     public String getName() {
@@ -80,7 +101,11 @@ public class VacancyDto {
         this.vacancyUrl = vacancyUrl;
     }
 
-    private Integer salaryTo = 0;
-    private String salaryCurrency = "";
-    private String vacancyUrl;
+    public Boolean getSent() {
+        return isSent;
+    }
+
+    public void setSent(Boolean sent) {
+        isSent = sent;
+    }
 }
