@@ -18,5 +18,6 @@ public class PetProjectController {
     @GetMapping("v")
     public void getAllVacancies() {
         vacancyService.getAllVacancies();
+        System.out.println("----");
     }
 }

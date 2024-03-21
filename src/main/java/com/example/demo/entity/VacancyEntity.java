@@ -12,7 +12,7 @@ public class VacancyEntity {
     @Column(unique = true)
     private Long vacancyId;
     @Column(name = "vacancy_name")
-    private String name;
+    private String vacancyName;
     private Long employerId;
     private String employerName;
     private String employerUrl;
@@ -38,12 +38,12 @@ public class VacancyEntity {
         this.vacancyId = vacancyId;
     }
 
-    public String getName() {
-        return name;
+    public String getVacancyName() {
+        return vacancyName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setVacancyName(String vacancyName) {
+        this.vacancyName = vacancyName;
     }
 
     public Long getEmployerId() {

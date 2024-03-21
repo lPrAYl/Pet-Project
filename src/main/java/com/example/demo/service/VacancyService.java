@@ -43,9 +43,14 @@ public class VacancyService {
             for (int i = 0; i < 1; i++) {
                 HttpRequest request = HttpRequest.newBuilder()
                         .GET()
+                        .headers("User-Agent", "HH-User-Agent")
                         .uri(URI.create(url + i))
                         .build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() != 200) {
+                    return;
+                }
+
                 JSONArray jsonArray = new JSONObject(response.body()).getJSONArray("items");
 
                 for (int j = 0; j < jsonArray.length(); j++) {
@@ -54,7 +59,7 @@ public class VacancyService {
 
                     if (checkVacancyByName(vacancyObject.getString("name").toLowerCase())) {
                         vacancyDto.setId(vacancyObject.getLong("id"));
-                        vacancyDto.setName(vacancyObject.getString("name"));
+                        vacancyDto.setVacancyName(vacancyObject.getString("name"));
                         vacancyDto.setVacancyUrl(vacancyObject.getString("alternate_url"));
 
                         JSONObject employerObject = vacancyObject.getJSONObject("employer");
@@ -78,11 +83,9 @@ public class VacancyService {
             }
 
             getEmployerUrl(employerIdToEmployerHHUrlMap, vacancyDtoMap, client);
-//            vacancyRepository.saveAll(VacancyMapper.INSTANCE.vacancyDtosToVacancies(vacancyDtoMap.values().stream().toList()));
 
             vacancyDtoMap.values().forEach(vacancyDto ->
                     vacancyRepository.saveVacancy(VacancyMapper.INSTANCE.vacancyDtoToVacancy(vacancyDto)));
-//            excelService.generateExcelFile(vacancyDtoMap);
             System.out.println();
         } catch (IOException |
                  InterruptedException e) {
@@ -130,10 +133,14 @@ public class VacancyService {
             if (!employerIdToEmployerUrlCache.containsKey(key)) {
                 HttpRequest request = HttpRequest.newBuilder()
                         .GET()
+                        .headers("User-Agent", "HH-User-Agent")
                         .uri(URI.create(value))
                         .build();
                 try {
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() != 200) {
+                        return;
+                    }
                     JSONObject jsonObject = new JSONObject(response.body());
                     employerIdToEmployerUrlCache.put(key, jsonObject.getString("site_url"));
                 } catch (IOException | InterruptedException e) {

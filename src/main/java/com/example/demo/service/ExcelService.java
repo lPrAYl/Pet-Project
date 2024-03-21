@@ -63,7 +63,7 @@ public class ExcelService {
         int rowNum = 1;
         for (VacancyEntity vacancy : vacancyRepository.findAllByIsSentIsFalse()) {
             Row row = sheet.createRow(rowNum);
-            row.createCell(0).setCellValue(vacancy.getName());
+            row.createCell(0).setCellValue(vacancy.getVacancyName());
             row.createCell(1).setCellValue(vacancy.getEmployerName());
             row.createCell(2).setCellValue(vacancy.getEmployerUrl());
             row.createCell(3).setCellValue(getSalaryValue(vacancy.getSalaryFrom(), vacancy.getSalaryCurrency()));
