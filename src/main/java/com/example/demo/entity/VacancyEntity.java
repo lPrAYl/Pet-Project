@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicUpdate;
 
 @Entity(name = "vacancy")
+@Table(indexes = @Index(columnList = "isSent"))
 public class VacancyEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
