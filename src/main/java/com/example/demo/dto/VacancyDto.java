@@ -7,6 +7,9 @@ public class VacancyDto {
     private String employerName = "";
     private String employerUrl = "";
     private Integer salaryFrom = 0;
+    private Integer salaryTo = 0;
+    private String salaryCurrency = "";
+    private String vacancyUrl;
 
     public Long getId() {
         return id;
@@ -80,7 +83,4 @@ public class VacancyDto {
         this.vacancyUrl = vacancyUrl;
     }
 
-    private Integer salaryTo = 0;
-    private String salaryCurrency = "";
-    private String vacancyUrl;
 }

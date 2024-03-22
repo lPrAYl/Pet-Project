@@ -1,10 +1,8 @@
 package com.example.demo.service;
 
 import ch.qos.logback.classic.Logger;
-import com.example.demo.dto.VacancyDto;
 import com.example.demo.entity.VacancyEntity;
 import com.example.demo.repository.VacancyRepository;
-import com.example.demo.service.mail.SendEmailsService;
 import jakarta.activation.DataSource;
 import jakarta.mail.util.ByteArrayDataSource;
 import org.apache.poi.ss.usermodel.Row;
@@ -12,13 +10,12 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class ExcelService {
@@ -28,19 +25,19 @@ public class ExcelService {
 
     @Value("${prop.mail.send_to}")
     private String sendTo;
-    private final SendEmailsService sendEmailsService;
+    private final VacancyService vacancyService;
 
-    public ExcelService(VacancyRepository vacancyRepository, SendEmailsService sendEmailsService) {
+
+    public ExcelService(VacancyRepository vacancyRepository, VacancyService vacancyService) {
         this.vacancyRepository = vacancyRepository;
-        this.sendEmailsService = sendEmailsService;
+        this.vacancyService = vacancyService;
     }
 
 //    @Scheduled(cron ="0 0 0 * * *")
-    public void generateExcelFile() {
+    public Optional<DataSource> generateExcelFile() {
+        vacancyService.updateVacancies();
         List<VacancyEntity> vacancyEntityList = vacancyRepository.findAllByIsSentIsFalse();
-        if (vacancyEntityList.isEmpty()) {
-            sendEmailsService.sendSimpleMessage();
-        } else {
+        if (!vacancyEntityList.isEmpty()) {
             try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                  XSSFWorkbook workbook = new XSSFWorkbook()
             ) {
@@ -48,17 +45,14 @@ public class ExcelService {
                 fillExcelHeader(sheet);
                 fillExcelData(sheet, vacancyEntityList);
                 workbook.write(outputStream);
-                DataSource attachment = new ByteArrayDataSource(outputStream.toByteArray(), "application/vnd.ms-excel");
-                //todo нужно вынести отсюда
-                sendEmailsService.sendHtmlMessage(attachment);
-//                sendEmailsService.sendHtmlMessage(sendTo, "subject", "-----text-----", null, null);
                 vacancyRepository.update();
+                return Optional.of(new ByteArrayDataSource(outputStream.toByteArray(), "application/vnd.ms-excel"));
             } catch (IOException e) {
                 log.error(e.getLocalizedMessage(), e);
             }
         }
 
-
+        return Optional.empty();
     }
 
     private void fillExcelHeader(Sheet sheet) {
@@ -71,9 +65,9 @@ public class ExcelService {
         headerRow.createCell(5).setCellValue("Url вакансии");
     }
 
-    private void fillExcelData(Sheet sheet, List<VacancyEntity> vacancys) {
+    private void fillExcelData(Sheet sheet, List<VacancyEntity> vacancies) {
         int rowNum = 1;
-        for (VacancyEntity vacancy : vacancys) {
+        for (VacancyEntity vacancy : vacancies) {
             Row row = sheet.createRow(rowNum);
             row.createCell(0).setCellValue(vacancy.getVacancyName());
             row.createCell(1).setCellValue(vacancy.getEmployerName());

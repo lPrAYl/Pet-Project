@@ -23,8 +23,8 @@ public interface VacancyRepository extends JpaRepository<VacancyEntity, Long> {
     @Modifying
     @Transactional
     @Query(value = "insert into vacancy (\n" +
-            "is_sent, salary_from, salary_to, employer_id, vacancy_id, employer_name,\n" +
-            "employer_url, vacancy_name, salary_currency, vacancy_url)\n" +
+            "   is_sent, salary_from, salary_to, employer_id, vacancy_id, employer_name,\n" +
+            "   employer_url, vacancy_name, salary_currency, vacancy_url)\n" +
             "values (false,:#{#vacancy.salaryFrom},:#{#vacancy.salaryTo},:#{#vacancy.employerId}," +
             ":#{#vacancy.vacancyId},:#{#vacancy.employerName},:#{#vacancy.employerUrl}," +
             ":#{#vacancy.vacancyName},:#{#vacancy.salaryCurrency},:#{#vacancy.vacancyUrl})\n" +

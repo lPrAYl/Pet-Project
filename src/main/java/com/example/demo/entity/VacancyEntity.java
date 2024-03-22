@@ -1,7 +1,6 @@
 package com.example.demo.entity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.DynamicUpdate;
 
 @Entity(name = "vacancy")
 @Table(indexes = @Index(columnList = "isSent"))

@@ -1,6 +1,8 @@
 package com.example.demo.service.mail;
 
 import ch.qos.logback.classic.Logger;
+import com.example.demo.service.ExcelService;
+import com.example.demo.service.VacancyService;
 import jakarta.activation.DataSource;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.LoggerFactory;
@@ -13,9 +15,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 
 @Service
-public class SendEmailsService {
+public class EmailService {
 
-    Logger log = (Logger) LoggerFactory.getLogger(SendEmailsService.class);
+    Logger log = (Logger) LoggerFactory.getLogger(EmailService.class);
 
     @Value("${spring.mail.username}")
     private String from;
@@ -24,12 +26,18 @@ public class SendEmailsService {
     @Value("${prop.mail.send_copy}")
     private String sendCopy;
     private final JavaMailSender javaMailSender;
+    private final ExcelService excelService;
 
-    public SendEmailsService(JavaMailSender javaMailSender) {
+    public EmailService(JavaMailSender javaMailSender, ExcelService excelService, VacancyService vacancyService) {
         this.javaMailSender = javaMailSender;
+        this.excelService = excelService;
     }
 
-    public void sendSimpleMessage() {
+    public void sendEmail() {
+        excelService.generateExcelFile().ifPresentOrElse(this::sendHtmlMessage, this::sendSimpleMessage);
+    }
+
+    private void sendSimpleMessage() {
         String logText = "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(sendTo);
@@ -46,7 +54,7 @@ public class SendEmailsService {
         }
     }
 
-    public void sendHtmlMessage(DataSource attachment) {
+    private void sendHtmlMessage(DataSource attachment) {
         String logText = "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
         MimeMessage message = javaMailSender.createMimeMessage();
         try {

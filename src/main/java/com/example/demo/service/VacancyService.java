@@ -6,10 +6,7 @@ import com.example.demo.mapper.VacancyMapper;
 import com.example.demo.repository.VacancyRepository;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.mapstruct.Mapper;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -17,8 +14,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,76 +22,25 @@ import java.util.Map;
 public class VacancyService {
     Logger log = (Logger) LoggerFactory.getLogger(VacancyService.class);
     Map<Long, String> employerIdToEmployerUrlCache = new HashMap<>();
-    private final ExcelService excelService;
     private final VacancyRepository vacancyRepository;
 
-
-
-    public VacancyService(ExcelService excelService, VacancyRepository vacancyRepository) {
-        this.excelService = excelService;
+    public VacancyService(VacancyRepository vacancyRepository) {
         this.vacancyRepository = vacancyRepository;
     }
 
-//    @Scheduled(cron ="0 0 8,20 * * *")
-    public void getAllVacancies() {
-//        JSONArray jsonArray = new JSONArray();
+    //    @Scheduled(cron ="0 0 8,20 * * *")
+    public void updateVacancies() {
         Map<Long, VacancyDto> vacancyDtoMap = new HashMap<>();
         Map<Long, String> employerIdToEmployerHHUrlMap = new HashMap<>();
 
         try (HttpClient client = HttpClient.newHttpClient()) {
-//            fetchVacancies(client, jsonArray);
-            String url = "https://api.hh.ru/vacancies/?per_page=20&page=";
-
-            for (int i = 0; i < 1; i++) {
-                HttpRequest request = HttpRequest.newBuilder()
-                        .GET()
-                        .headers("User-Agent", "HH-User-Agent")
-                        .uri(URI.create(url + i))
-                        .build();
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                if (response.statusCode() != 200) {
-                    return;
-                }
-
-                JSONArray jsonArray = new JSONObject(response.body()).getJSONArray("items");
-
-                for (int j = 0; j < jsonArray.length(); j++) {
-                    JSONObject vacancyObject = jsonArray.getJSONObject(j);
-                    VacancyDto vacancyDto = new VacancyDto();
-
-                    if (checkVacancyByName(vacancyObject.getString("name").toLowerCase())) {
-                        vacancyDto.setId(vacancyObject.getLong("id"));
-                        vacancyDto.setVacancyName(vacancyObject.getString("name"));
-                        vacancyDto.setVacancyUrl(vacancyObject.getString("alternate_url"));
-
-                        JSONObject employerObject = vacancyObject.getJSONObject("employer");
-                        if (!employerObject.has("id")) {
-                            continue;
-                        }
-                        vacancyDto.setEmployerId(employerObject.getLong("id"));
-                        vacancyDto.setEmployerName(employerObject.getString("name"));
-
-                        JSONObject salaryObject = vacancyObject.optJSONObject("salary", new JSONObject());
-                        if (!salaryObject.isEmpty()) {
-                            vacancyDto.setSalaryFrom(salaryObject.optInt("from", 0));
-                            vacancyDto.setSalaryTo(salaryObject.optInt("to", 0));
-                            vacancyDto.setSalaryCurrency(salaryObject.optString("currency", "RUR"));
-                        }
-
-                        vacancyDtoMap.put(vacancyDto.getId(), vacancyDto);
-                        employerIdToEmployerHHUrlMap.put(employerObject.getLong("id"), employerObject.getString("url"));
-                    }
-                }
-            }
-
-            getEmployerUrl(employerIdToEmployerHHUrlMap, vacancyDtoMap, client);
+            fetchVacancies(vacancyDtoMap, employerIdToEmployerHHUrlMap, client);
+            getEmployerUrl(vacancyDtoMap, employerIdToEmployerHHUrlMap, client);
 
             vacancyDtoMap.values().forEach(vacancyDto ->
                     vacancyRepository.saveVacancy(VacancyMapper.INSTANCE.vacancyDtoToVacancy(vacancyDto)));
-            excelService.generateExcelFile();
             log.info("Спарсили очередную пачку вакансий");
-        } catch (IOException |
-                 InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -106,37 +50,71 @@ public class VacancyService {
         return names.stream().anyMatch(name::contains);
     }
 
-//    private void fetchVacancies(HttpClient client, JSONArray jsonArray) throws IOException, InterruptedException {
-//        String url = "https://api.hh.ru/vacancies/?per_page=100&page=";
-//
-//        for (int i = 0; i < 20; i++) {
-//            HttpRequest request = HttpRequest.newBuilder()
-//                    .GET()
-//                    .uri(URI.create(url + i))
-//                    .build();
-//            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-//            jsonArray.putAll(new JSONObject(response.body()).getJSONArray("items"));
-//        }
-//    }
+    private void fetchVacancies(
+            Map<Long, VacancyDto> vacancyDtoMap,
+            Map<Long, String> employerIdToEmployerHHUrlMap,
+            HttpClient client
+    ) throws IOException, InterruptedException {
+        JSONArray jsonVacancies = new JSONArray();
+        String url = "https://api.hh.ru/vacancies/?per_page=100&page=";
 
-    private void getEmployerUrl(Map<Long, String> mapEmployerIdToEmployerHHUrl,
-                                Map<Long, VacancyDto> vacancyDtoMap,
-                                HttpClient client) {
-        Long start = System.currentTimeMillis();
+        for (int i = 0; i < 1; i++) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create(url + i))
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                return;
+            }
+            jsonVacancies.putAll(new JSONObject(response.body()).getJSONArray("items"));
+        }
 
-        Map<Long, String> employerIdToEmployerUrlMap = getEmployerIdToEmployerUrlCache(mapEmployerIdToEmployerHHUrl, client);
+        for (int j = 0; j < jsonVacancies.length(); j++) {
+            VacancyDto vacancyDto = new VacancyDto();
+            JSONObject vacancyObject = jsonVacancies.getJSONObject(j);
 
-        System.out.println(System.currentTimeMillis() - start);
+            if (checkVacancyByName(vacancyObject.getString("name").toLowerCase())) {
+                vacancyDto.setId(vacancyObject.getLong("id"));
+                vacancyDto.setVacancyName(vacancyObject.getString("name"));
+                vacancyDto.setVacancyUrl(vacancyObject.getString("alternate_url"));
 
+                JSONObject employerObject = vacancyObject.getJSONObject("employer");
+                if (!employerObject.has("id")) {
+                    continue;
+                }
+                vacancyDto.setEmployerId(employerObject.getLong("id"));
+                vacancyDto.setEmployerName(employerObject.getString("name"));
+
+                JSONObject salaryObject = vacancyObject.optJSONObject("salary", new JSONObject());
+                if (!salaryObject.isEmpty()) {
+                    vacancyDto.setSalaryFrom(salaryObject.optInt("from", 0));
+                    vacancyDto.setSalaryTo(salaryObject.optInt("to", 0));
+                    vacancyDto.setSalaryCurrency(salaryObject.optString("currency", "RUR"));
+                }
+
+                vacancyDtoMap.put(vacancyDto.getId(), vacancyDto);
+                employerIdToEmployerHHUrlMap.put(employerObject.getLong("id"), employerObject.getString("url"));
+            }
+        }
+    }
+
+    private void getEmployerUrl(
+            Map<Long, VacancyDto> vacancyDtoMap,
+            Map<Long, String> employerIdToEmployerHHUrlMap,
+            HttpClient client
+    ) {
+        Map<Long, String> employerIdToEmployerUrlMap =
+                getEmployerIdToEmployerUrlCache(employerIdToEmployerHHUrlMap, client);
         vacancyDtoMap.forEach((key, value) ->
                 value.setEmployerUrl(employerIdToEmployerUrlMap.getOrDefault(value.getEmployerId(), ""))
         );
-        System.out.println();
     }
 
-
-    private Map<Long, String> getEmployerIdToEmployerUrlCache(Map<Long, String> employerIdToEmployerHHUrlMap, HttpClient client) {
-
+    private Map<Long, String> getEmployerIdToEmployerUrlCache(
+            Map<Long, String> employerIdToEmployerHHUrlMap,
+            HttpClient client
+    ) {
         employerIdToEmployerHHUrlMap.forEach((key, value) -> {
             if (!employerIdToEmployerUrlCache.containsKey(key)) {
                 HttpRequest request = HttpRequest.newBuilder()
