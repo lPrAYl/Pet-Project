@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -27,13 +28,11 @@ public class ExcelService {
     private String sendTo;
     private final VacancyService vacancyService;
 
-
     public ExcelService(VacancyRepository vacancyRepository, VacancyService vacancyService) {
         this.vacancyRepository = vacancyRepository;
         this.vacancyService = vacancyService;
     }
 
-//    @Scheduled(cron ="0 0 0 * * *")
     public Optional<DataSource> generateExcelFile() {
         vacancyService.updateVacancies();
         List<VacancyEntity> vacancyEntityList = vacancyRepository.findAllByIsSentIsFalse();

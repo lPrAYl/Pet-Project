@@ -7,6 +7,7 @@ import com.example.demo.repository.VacancyRepository;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class VacancyService {
         this.vacancyRepository = vacancyRepository;
     }
 
-    //    @Scheduled(cron ="0 0 8,20 * * *")
+    @Scheduled(cron = "0 0 8,20 * * *")
     public void updateVacancies() {
         Map<Long, VacancyDto> vacancyDtoMap = new HashMap<>();
         Map<Long, String> employerIdToEmployerHHUrlMap = new HashMap<>();
@@ -38,7 +39,7 @@ public class VacancyService {
             getEmployerUrl(vacancyDtoMap, employerIdToEmployerHHUrlMap, client);
 
             vacancyDtoMap.values().forEach(vacancyDto ->
-                    vacancyRepository.saveVacancy(VacancyMapper.INSTANCE.vacancyDtoToVacancy(vacancyDto)));
+                                                   vacancyRepository.saveVacancy(VacancyMapper.INSTANCE.vacancyDtoToVacancy(vacancyDto)));
             log.info("Спарсили очередную пачку вакансий");
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -107,7 +108,7 @@ public class VacancyService {
         Map<Long, String> employerIdToEmployerUrlMap =
                 getEmployerIdToEmployerUrlCache(employerIdToEmployerHHUrlMap, client);
         vacancyDtoMap.forEach((key, value) ->
-                value.setEmployerUrl(employerIdToEmployerUrlMap.getOrDefault(value.getEmployerId(), ""))
+                                      value.setEmployerUrl(employerIdToEmployerUrlMap.getOrDefault(value.getEmployerId(), ""))
         );
     }
 
