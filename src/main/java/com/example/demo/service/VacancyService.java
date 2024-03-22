@@ -1,12 +1,15 @@
 package com.example.demo.service;
 
+import ch.qos.logback.classic.Logger;
 import com.example.demo.dto.VacancyDto;
 import com.example.demo.mapper.VacancyMapper;
 import com.example.demo.repository.VacancyRepository;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mapstruct.Mapper;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -22,15 +25,19 @@ import java.util.Map;
 
 @Service
 public class VacancyService {
+    Logger log = (Logger) LoggerFactory.getLogger(VacancyService.class);
     Map<Long, String> employerIdToEmployerUrlCache = new HashMap<>();
     private final ExcelService excelService;
     private final VacancyRepository vacancyRepository;
+
+
 
     public VacancyService(ExcelService excelService, VacancyRepository vacancyRepository) {
         this.excelService = excelService;
         this.vacancyRepository = vacancyRepository;
     }
 
+//    @Scheduled(cron ="0 0 8,20 * * *")
     public void getAllVacancies() {
 //        JSONArray jsonArray = new JSONArray();
         Map<Long, VacancyDto> vacancyDtoMap = new HashMap<>();
@@ -86,7 +93,8 @@ public class VacancyService {
 
             vacancyDtoMap.values().forEach(vacancyDto ->
                     vacancyRepository.saveVacancy(VacancyMapper.INSTANCE.vacancyDtoToVacancy(vacancyDto)));
-            System.out.println();
+            excelService.generateExcelFile();
+            log.info("Спарсили очередную пачку вакансий");
         } catch (IOException |
                  InterruptedException e) {
             throw new RuntimeException(e);

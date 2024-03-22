@@ -12,10 +12,12 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -33,20 +35,30 @@ public class ExcelService {
         this.sendEmailsService = sendEmailsService;
     }
 
+//    @Scheduled(cron ="0 0 0 * * *")
     public void generateExcelFile() {
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-             XSSFWorkbook workbook = new XSSFWorkbook()
-        ) {
-            Sheet sheet = workbook.createSheet("new");
-            fillExcelHeader(sheet);
-            fillExcelData(sheet);
-            workbook.write(outputStream);
-            DataSource attachment = new ByteArrayDataSource(outputStream.toByteArray(), "application/vnd.ms-excel");
-            //todo нужно вынести отсюда
-            sendEmailsService.sendHtmlMessage(sendTo, "subject", "-----text-----", "file.xlsx", attachment);
-        } catch (IOException e) {
-            log.error(e.getLocalizedMessage(), e);
+        List<VacancyEntity> vacancyEntityList = vacancyRepository.findAllByIsSentIsFalse();
+        if (vacancyEntityList.isEmpty()) {
+            sendEmailsService.sendSimpleMessage();
+        } else {
+            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                 XSSFWorkbook workbook = new XSSFWorkbook()
+            ) {
+                Sheet sheet = workbook.createSheet("new");
+                fillExcelHeader(sheet);
+                fillExcelData(sheet, vacancyEntityList);
+                workbook.write(outputStream);
+                DataSource attachment = new ByteArrayDataSource(outputStream.toByteArray(), "application/vnd.ms-excel");
+                //todo нужно вынести отсюда
+                sendEmailsService.sendHtmlMessage(attachment);
+//                sendEmailsService.sendHtmlMessage(sendTo, "subject", "-----text-----", null, null);
+                vacancyRepository.update();
+            } catch (IOException e) {
+                log.error(e.getLocalizedMessage(), e);
+            }
         }
+
+
     }
 
     private void fillExcelHeader(Sheet sheet) {
@@ -59,9 +71,9 @@ public class ExcelService {
         headerRow.createCell(5).setCellValue("Url вакансии");
     }
 
-    private void fillExcelData(Sheet sheet) {
+    private void fillExcelData(Sheet sheet, List<VacancyEntity> vacancys) {
         int rowNum = 1;
-        for (VacancyEntity vacancy : vacancyRepository.findAllByIsSentIsFalse()) {
+        for (VacancyEntity vacancy : vacancys) {
             Row row = sheet.createRow(rowNum);
             row.createCell(0).setCellValue(vacancy.getVacancyName());
             row.createCell(1).setCellValue(vacancy.getEmployerName());
