@@ -2,8 +2,12 @@ package com.example.demo.entity;
 
 import jakarta.persistence.*;
 
-@Entity(name = "vacancy")
-@Table(indexes = @Index(columnList = "isSent"))
+@Entity
+@Table(name = "vacancy",
+        indexes = {
+        @Index(name = "is_send_inx", columnList = "isSent"),
+        @Index(name = "vacancies_inx", columnList = "vacancyId")
+})
 public class VacancyEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
