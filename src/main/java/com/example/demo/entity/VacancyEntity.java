@@ -5,14 +5,13 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "vacancy",
         indexes = {
-        @Index(name = "is_send_inx", columnList = "isSent"),
-        @Index(name = "vacancies_inx", columnList = "vacancyId")
-})
+                @Index(name = "is_send_inx", columnList = "isSent"),
+                @Index(name = "vacancies_id_inx", columnList = "vacancyId", unique = true)
+        })
 public class VacancyEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(unique = true)
     private Long vacancyId;
     @Column(name = "vacancy_name")
     private String vacancyName;

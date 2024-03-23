@@ -1,6 +1,8 @@
 package com.example.demo.service.mail;
 
 import ch.qos.logback.classic.Logger;
+import com.example.demo.entity.VacancyEntity;
+import com.example.demo.repository.VacancyRepository;
 import com.example.demo.service.ExcelService;
 import jakarta.activation.DataSource;
 import jakarta.mail.internet.MimeMessage;
@@ -13,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class EmailService {
@@ -29,10 +32,13 @@ public class EmailService {
     private final String noVacancies = "Нет новых вакансий за прошлые сутки";
     private final JavaMailSender javaMailSender;
     private final ExcelService excelService;
+    private final VacancyRepository vacancyRepository;
 
-    public EmailService(JavaMailSender javaMailSender, ExcelService excelService) {
+    public EmailService(JavaMailSender javaMailSender, ExcelService excelService,
+                        VacancyRepository vacancyRepository) {
         this.javaMailSender = javaMailSender;
         this.excelService = excelService;
+        this.vacancyRepository = vacancyRepository;
     }
 
     @Scheduled(cron = "0 0 0 * * *")
@@ -71,10 +77,18 @@ public class EmailService {
             helper.setSubject(newVacancies);
             helper.setText(newVacancies, true);
             javaMailSender.send(message);
+
+            updateVacancies();
             log.info("(sendHtmlMessage()) Отправлено " + logText);
         } catch (Exception e) {
             log.error("(sendHtmlMessage()) Не отправлено " + logText);
             log.error(e.getLocalizedMessage(), e);
         }
+    }
+
+    private void updateVacancies() {
+        List<VacancyEntity> vacancyEntityList = vacancyRepository.findAllByIsSentIsFalseOrderByIdDesc();
+        vacancyEntityList.forEach(v -> v.setSent(true));
+        vacancyRepository.saveAll(vacancyEntityList);
     }
 }

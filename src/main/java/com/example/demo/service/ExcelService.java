@@ -9,8 +9,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -23,9 +21,6 @@ public class ExcelService {
 
     private final VacancyRepository vacancyRepository;
     Logger log = (Logger) LoggerFactory.getLogger(ExcelService.class);
-
-    @Value("${prop.mail.send_to}")
-    private String sendTo;
     private final VacancyService vacancyService;
 
     public ExcelService(VacancyRepository vacancyRepository, VacancyService vacancyService) {
@@ -34,21 +29,23 @@ public class ExcelService {
     }
 
     public Optional<DataSource> generateExcelFile() {
-        vacancyService.updateVacancies();
-        List<VacancyEntity> vacancyEntityList = vacancyRepository.findAllByIsSentIsFalse();
-        if (!vacancyEntityList.isEmpty()) {
-            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                 XSSFWorkbook workbook = new XSSFWorkbook()
-            ) {
-                Sheet sheet = workbook.createSheet("new");
-                fillExcelHeader(sheet);
-                fillExcelData(sheet, vacancyEntityList);
-                workbook.write(outputStream);
-                vacancyRepository.update();
-                return Optional.of(new ByteArrayDataSource(outputStream.toByteArray(), "application/vnd.ms-excel"));
-            } catch (IOException e) {
-                log.error(e.getLocalizedMessage(), e);
-            }
+        //todo удалить перед релизом
+//                vacancyService.updateVacancies();
+        List<VacancyEntity> vacancyEntityList = vacancyRepository.findAllByIsSentIsFalseOrderByIdDesc();
+        if (vacancyEntityList.isEmpty()) {
+            return Optional.empty();
+        }
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             XSSFWorkbook workbook = new XSSFWorkbook()
+        ) {
+            Sheet sheet = workbook.createSheet("new");
+            fillExcelHeader(sheet);
+            fillExcelData(sheet, vacancyEntityList);
+            workbook.write(outputStream);
+            return Optional.of(new ByteArrayDataSource(outputStream.toByteArray(), "application/vnd.ms-excel"));
+        } catch (IOException e) {
+            log.error(e.getLocalizedMessage(), e);
         }
 
         return Optional.empty();
@@ -79,9 +76,6 @@ public class ExcelService {
     }
 
     private String getSalaryValue(int salary, String currency) {
-        if (salary == 0) {
-            return "";
-        }
-        return salary + " " + currency;
+        return salary == 0 ? "" : salary + " " + currency;
     }
 }

@@ -2,11 +2,14 @@ package com.example.demo.service;
 
 import ch.qos.logback.classic.Logger;
 import com.example.demo.dto.VacancyDto;
+import com.example.demo.entity.VacancyEntity;
 import com.example.demo.mapper.VacancyMapper;
 import com.example.demo.repository.VacancyRepository;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.mapstruct.factory.Mappers;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -21,9 +24,15 @@ import java.util.Map;
 
 @Service
 public class VacancyService {
-    Logger log = (Logger) LoggerFactory.getLogger(VacancyService.class);
-    Map<Long, String> employerIdToEmployerUrlCache = new HashMap<>();
+
+    @Value("${hh.url}")
+    private String hhUrl;
+    private final Logger log = (Logger) LoggerFactory.getLogger(this.getClass());
+
+    private final VacancyMapper mapper = Mappers.getMapper(VacancyMapper.class);
+    private final Map<Long, String> employerIdToEmployerUrlCache = new HashMap<>();
     private final VacancyRepository vacancyRepository;
+    private HttpRequest request;
 
     public VacancyService(VacancyRepository vacancyRepository) {
         this.vacancyRepository = vacancyRepository;
@@ -38,8 +47,14 @@ public class VacancyService {
             fetchVacancies(vacancyDtoMap, employerIdToEmployerHHUrlMap, client);
             getEmployerUrl(vacancyDtoMap, employerIdToEmployerHHUrlMap, client);
 
-            vacancyDtoMap.values().forEach(vacancyDto ->
-                                                   vacancyRepository.saveVacancy(VacancyMapper.INSTANCE.vacancyDtoToVacancy(vacancyDto)));
+            List<VacancyEntity> entities = mapper.vacancyDtosToVacancies(vacancyDtoMap.values().stream().toList());
+
+            for (VacancyEntity entity : entities) {
+                try {
+                    vacancyRepository.saveAndFlush(entity);
+                } catch (Exception e) {
+                }
+            }
             log.info("Спарсили очередную пачку вакансий");
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -51,25 +66,9 @@ public class VacancyService {
         return names.stream().anyMatch(name::contains);
     }
 
-    private void fetchVacancies(
-            Map<Long, VacancyDto> vacancyDtoMap,
-            Map<Long, String> employerIdToEmployerHHUrlMap,
-            HttpClient client
-    ) throws IOException, InterruptedException {
-        JSONArray jsonVacancies = new JSONArray();
-        String url = "https://api.hh.ru/vacancies/?per_page=100&page=";
-
-        for (int i = 0; i < 1; i++) {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .GET()
-                    .uri(URI.create(url + i))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                return;
-            }
-            jsonVacancies.putAll(new JSONObject(response.body()).getJSONArray("items"));
-        }
+    private void fetchVacancies(Map<Long, VacancyDto> vacancyDtoMap,
+                                Map<Long, String> employerIdToEmployerHHUrlMap, HttpClient client) throws IOException, InterruptedException {
+        JSONArray jsonVacancies = getAllVacancies(client);
 
         for (int j = 0; j < jsonVacancies.length(); j++) {
             VacancyDto vacancyDto = new VacancyDto();
@@ -100,11 +99,22 @@ public class VacancyService {
         }
     }
 
-    private void getEmployerUrl(
-            Map<Long, VacancyDto> vacancyDtoMap,
-            Map<Long, String> employerIdToEmployerHHUrlMap,
-            HttpClient client
-    ) {
+    private JSONArray getAllVacancies(HttpClient client) throws IOException, InterruptedException {
+        JSONArray jsonVacancies = new JSONArray();
+
+        for (int i = 0; i < 1; i++) {
+            request = getHttpRequest(hhUrl + i);
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                return jsonVacancies;
+            }
+            jsonVacancies.putAll(new JSONObject(response.body()).getJSONArray("items"));
+        }
+        return jsonVacancies;
+    }
+
+    private void getEmployerUrl(Map<Long, VacancyDto> vacancyDtoMap,
+                                Map<Long, String> employerIdToEmployerHHUrlMap, HttpClient client) {
         Map<Long, String> employerIdToEmployerUrlMap =
                 getEmployerIdToEmployerUrlCache(employerIdToEmployerHHUrlMap, client);
         vacancyDtoMap.forEach((key, value) ->
@@ -112,17 +122,11 @@ public class VacancyService {
         );
     }
 
-    private Map<Long, String> getEmployerIdToEmployerUrlCache(
-            Map<Long, String> employerIdToEmployerHHUrlMap,
-            HttpClient client
-    ) {
+    private Map<Long, String> getEmployerIdToEmployerUrlCache(Map<Long, String> employerIdToEmployerHHUrlMap,
+                                                              HttpClient client) {
         employerIdToEmployerHHUrlMap.forEach((key, value) -> {
             if (!employerIdToEmployerUrlCache.containsKey(key)) {
-                HttpRequest request = HttpRequest.newBuilder()
-                        .GET()
-                        .headers("User-Agent", "HH-User-Agent")
-                        .uri(URI.create(value))
-                        .build();
+                request = getHttpRequest(value);
                 try {
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                     if (response.statusCode() != 200) {
@@ -137,5 +141,13 @@ public class VacancyService {
         });
 
         return employerIdToEmployerUrlCache;
+    }
+
+    private static HttpRequest getHttpRequest(String value) {
+        return HttpRequest.newBuilder()
+                .GET()
+                .headers("User-Agent", "HH-User-Agent")
+                .uri(URI.create(value))
+                .build();
     }
 }
