@@ -25,8 +25,8 @@ public class EmailService {
     private String sendTo;
     @Value("${prop.mail.send_copy}")
     private String sendCopy;
-    String logText = "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
-    String noVacancies = "Нет вакансии за прошлые сутки";
+
+    private String noVacancies = "Нет вакансии за прошлые сутки";
     private final JavaMailSender javaMailSender;
     private final ExcelService excelService;
 
@@ -43,6 +43,7 @@ public class EmailService {
 
     private void sendSimpleMessage() {
         SimpleMailMessage message = new SimpleMailMessage();
+        String logText = "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
         message.setTo(sendTo);
         message.setCc(sendCopy);
         message.setFrom(from);
@@ -60,6 +61,7 @@ public class EmailService {
     private void sendHtmlMessage(DataSource attachment) {
         String newVacancies = "Новые вакансии за " + LocalDate.now().minusDays(1);
         MimeMessage message = javaMailSender.createMimeMessage();
+        String logText = "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setTo(sendTo);
