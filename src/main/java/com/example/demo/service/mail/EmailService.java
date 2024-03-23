@@ -26,7 +26,7 @@ public class EmailService {
     @Value("${prop.mail.send_copy}")
     private String sendCopy;
 
-    private String noVacancies = "Нет вакансии за прошлые сутки";
+    private final String noVacancies = "Нет новых вакансий за прошлые сутки";
     private final JavaMailSender javaMailSender;
     private final ExcelService excelService;
 
