@@ -49,9 +49,10 @@ public class EmailService {
 
     private void sendSimpleMessage() {
         SimpleMailMessage message = new SimpleMailMessage();
+        String[] sendCopyArr = sendCopy.split(",");
         String logText = "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
         message.setTo(sendTo);
-        message.setCc(sendCopy);
+        message.setCc(sendCopyArr);
         message.setFrom(from);
         message.setSubject(noVacancies);
         message.setText(noVacancies);

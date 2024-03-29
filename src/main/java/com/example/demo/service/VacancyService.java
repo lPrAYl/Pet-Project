@@ -38,7 +38,7 @@ public class VacancyService {
         this.vacancyRepository = vacancyRepository;
     }
 
-    @Scheduled(cron = "0 0 8,20 * * *")
+    @Scheduled(cron = "0 0 1,9,18 * * *")
     public void updateVacancies() {
         Map<Long, VacancyDto> vacancyDtoMap = new HashMap<>();
         Map<Long, String> employerIdToEmployerHHUrlMap = new HashMap<>();
@@ -62,7 +62,9 @@ public class VacancyService {
     }
 
     private boolean checkVacancyByName(String name) {
-        List<String> names = List.of("водитель", "менеджер");
+        List<String> names = List.of("специалист по трафику", "интернет-маркетолог", "интернет маркетолог", "таргетолог",
+                                     "контекстолог", "специалист по настройке яндекс директ", "Ведущий PPC-специалист",
+                                     "PPC-специалист", "директолог", "специалист по контекстной рекламе", "digital-маркетолог");
         return names.stream().anyMatch(name::contains);
     }
 
@@ -140,6 +142,7 @@ public class VacancyService {
             }
         });
 
+        log.info("Размер кеша работодателей " + employerIdToEmployerUrlCache.size());
         return employerIdToEmployerUrlCache;
     }
 
