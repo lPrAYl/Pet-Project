@@ -49,18 +49,16 @@ public class EmailService {
 
     private void sendSimpleMessage() {
         SimpleMailMessage message = new SimpleMailMessage();
-        String[] sendCopyArr = sendCopy.split(",");
-        String logText = "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
         message.setTo(sendTo);
-        message.setCc(sendCopyArr);
+        message.setCc(getEmailAddressForCopy());
         message.setFrom(from);
         message.setSubject(noVacancies);
         message.setText(noVacancies);
         try {
             javaMailSender.send(message);
-            log.info("(sendSimpleMessage()) Отправлено " + logText);
+            log.info("(sendSimpleMessage()) Отправлено " + logText());
         } catch (Exception e) {
-            log.error("(sendSimpleMessage()) Не отправлено " + logText);
+            log.error("(sendSimpleMessage()) Не отправлено " + logText());
             log.error(e.getLocalizedMessage(), e);
         }
     }
@@ -68,11 +66,10 @@ public class EmailService {
     private void sendHtmlMessage(DataSource attachment) {
         String newVacancies = "Новые вакансии за " + LocalDate.now().minusDays(1);
         MimeMessage message = javaMailSender.createMimeMessage();
-        String logText = "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setTo(sendTo);
-            helper.setCc(sendCopy);
+            helper.setCc(getEmailAddressForCopy());
             helper.setFrom(from);
             helper.addAttachment("file.xlsx", attachment);
             helper.setSubject(newVacancies);
@@ -80,11 +77,19 @@ public class EmailService {
             javaMailSender.send(message);
 
             updateVacancies();
-            log.info("(sendHtmlMessage()) Отправлено " + logText);
+            log.info("(sendHtmlMessage()) Отправлено " + logText());
         } catch (Exception e) {
-            log.error("(sendHtmlMessage()) Не отправлено " + logText);
+            log.error("(sendHtmlMessage()) Не отправлено " + logText());
             log.error(e.getLocalizedMessage(), e);
         }
+    }
+
+    private String logText(){
+        return "письмо на адрес: " + sendTo + ", копия: " + sendCopy;
+    }
+
+    private String[] getEmailAddressForCopy(){
+        return sendCopy.split(",");
     }
 
     private void updateVacancies() {
