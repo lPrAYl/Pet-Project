@@ -96,5 +96,6 @@ public class EmailService {
         List<VacancyEntity> vacancyEntityList = vacancyRepository.findAllByIsSentIsFalseOrderByIdDesc();
         vacancyEntityList.forEach(v -> v.setSent(true));
         vacancyRepository.saveAll(vacancyEntityList);
+
     }
 }
