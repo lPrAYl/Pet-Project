@@ -15,13 +15,15 @@ public class VacancyEntity {
     private Long vacancyId;
     @Column(name = "vacancy_name")
     private String vacancyName;
+    //  alternate_url вакансии на hh.ru
+    private String vacancyUrl;
     private Long employerId;
     private String employerName;
+    //  url работодателя
     private String employerUrl;
     private Integer salaryFrom;
     private Integer salaryTo;
     private String salaryCurrency;
-    private String vacancyUrl;
     private Boolean isSent = false;
 
     public Long getId() {
