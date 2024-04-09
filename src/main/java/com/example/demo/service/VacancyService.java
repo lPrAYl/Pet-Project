@@ -124,7 +124,7 @@ public class VacancyService {
     private JSONArray getAllVacanciesJSONArray(HttpClient client) throws IOException, InterruptedException {
         JSONArray jsonVacancies = new JSONArray();
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 20; i++) {
             request = getHttpRequest(hhUrl + i);
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
