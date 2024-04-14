@@ -8,20 +8,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/")
 public class PetProjectController {
-
-    private final EmailService emailService;
-
-    public PetProjectController(EmailService emailService) {
-        this.emailService = emailService;
-    }
-
-    @GetMapping("email")
-    public void sendEmailWithVacancies() {
-        emailService.sendEmail();
-    }
-
-    @GetMapping("start")
-    public String getString(){
-        return "Это ответ от сервера";
-    }
+//
+//    private final EmailService emailService;
+//
+//    public PetProjectController(EmailService emailService) {
+//        this.emailService = emailService;
+//    }
+//
+//    @GetMapping("email")
+//    public void sendEmailWithVacancies() {
+//        emailService.sendEmail();
+//    }
+//
+//    @GetMapping("start")
+//    public String getString(){
+//        return "Это ответ от сервера";
+//    }
 }
