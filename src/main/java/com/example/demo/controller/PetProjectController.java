@@ -1,9 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.mail.EmailService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/")
@@ -23,5 +21,31 @@ public class PetProjectController {
     @GetMapping("start")
     public String getString(){
         return "Это ответ от сервера";
+    }
+
+
+    @GetMapping("/login")
+    public String loginEndpoint() {
+        return "Login!";
+    }
+
+    @GetMapping("/admin")
+    public String adminEndpoint() {
+        return "Admin!";
+    }
+
+    @GetMapping("/user")
+    public String userEndpoint() {
+        return "User!";
+    }
+
+    @GetMapping("/all")
+    public String allRolesEndpoint() {
+        return "All Roles!";
+    }
+
+    @DeleteMapping("/delete")
+    public String deleteEndpoint(@RequestBody String s) {
+        return "I am deleting " + s;
     }
 }
